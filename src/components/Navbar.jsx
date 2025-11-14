@@ -10,9 +10,11 @@ export default function Navbar() {
           <img src={logo} alt="µtronics logo" className="h-14 w-auto object-contain" />
           <div>
             <h1 className="text-xl md:text-2xl font-semibold">µtronics</h1>
+            {/*
             <p className="text-xs text-gray-500 uppercase tracking-wider">
               The Digitizer — Electronic Instruments
             </p>
+            */}
           </div>
         </div>
 
