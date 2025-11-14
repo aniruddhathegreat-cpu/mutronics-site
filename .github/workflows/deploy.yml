@@ -3,7 +3,7 @@ name: Build & Deploy Vite App to GitHub Pages (All OS)
 on:
   push:
     branches: ["main"]
-  workflow_dispatch:  # allow manual runs
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -21,10 +21,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Setup Node
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: 18
 
@@ -35,7 +35,7 @@ jobs:
         run: npm run build
 
       - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: site-${{ matrix.os }}
           path: dist
@@ -50,7 +50,7 @@ jobs:
 
     steps:
       - name: Download Ubuntu artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
         with:
           name: site-ubuntu-latest
           path: dist
@@ -61,4 +61,4 @@ jobs:
           path: dist
 
       - name: Deploy
-        uses: actions/deploy-pages@v2
+        uses: actions/deploy-pages@v4
