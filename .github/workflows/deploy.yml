@@ -1,4 +1,4 @@
-name: Build & Deploy Vite App to GitHub Pages (All OS)
+name: Deploy Vite App to GitHub Pages
 
 on:
   push:
@@ -6,27 +6,23 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: write
+  contents: read
   pages: write
   id-token: write
 
 jobs:
   build:
-    name: Build on ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repository
+      - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Setup Node
+      - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 18
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -34,31 +30,15 @@ jobs:
       - name: Build Vite site
         run: npm run build
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v4
+      - name: Upload build output
+        uses: actions/upload-pages-artifact@v3
         with:
-          name: site-${{ matrix.os }}
-          path: dist
+          path: ./dist
 
   deploy:
-    name: Deploy to GitHub Pages
-    needs: build
     runs-on: ubuntu-latest
-    permissions:
-      pages: write
-      id-token: write
+    needs: build
 
     steps:
-      - name: Download Ubuntu artifact
-        uses: actions/download-artifact@v4
-        with:
-          name: site-ubuntu-latest
-          path: dist
-
-      - name: Upload to GitHub Pages
-        uses: actions/upload-pages-artifact@v2
-        with:
-          path: dist
-
-      - name: Deploy
+      - name: Deploy to GitHub Pages
         uses: actions/deploy-pages@v4
