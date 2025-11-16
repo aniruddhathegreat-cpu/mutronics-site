@@ -5,7 +5,7 @@ import React, { useState, useEffect } from "react";
 // CONFIG — UPDATE THESE:
 // -------------------------------------------------------------
 const RECAPTCHA_SITE_KEY = "6LfQjgwsAAAAAEdurayKaqfWOnaXdVEyBMAqO3ay";
-const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyRAY98f1PXQPuniPHkgNhkKBL9AssxdIX_ASI0aVgf7bOSGzyzPBVhpQAGw6GJlGRf/exec";
+const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx3Jl77ks2CDD8kF3mvj4EpK_x55evbx8wM50NM-0VjFVeKEEUwZTTLpLkvPJwv6aNF/exec"; 
 // -------------------------------------------------------------
 
 const SPAM_KEYWORDS = ["viagra", "casino", "loan", "bitcoin", "porn"];
@@ -16,10 +16,10 @@ export default function ContactForm() {
   const [status, setStatus] = useState(null);
   const [formStart] = useState(() => Date.now());
 
-  // Make sure reCAPTCHA is available
+  // Make sure reCAPTCHA loads
   useEffect(() => {
     if (!window.grecaptcha) {
-      console.warn("reCAPTCHA script not loaded. Check index.html head section.");
+      console.warn("reCAPTCHA script not loaded. Check index.html.");
     }
   }, []);
 
@@ -38,21 +38,18 @@ export default function ContactForm() {
     // Client-side spam filtering
     // -------------------------
 
-    // Required fields
     if (!name || !email || !message) {
       setStatus({ type: "error", text: "Please complete all fields." });
       setSending(false);
       return;
     }
 
-    // Honeypot check
     if (honeypot !== "") {
       setStatus({ type: "spam", text: "Spam blocked (honeypot)." });
       setSending(false);
       return;
     }
 
-    // Too fast (bot-like)
     const now = Date.now();
     if (now - formStart < MIN_SUBMIT_TIME_MS) {
       setStatus({ type: "spam", text: "Submission too fast — blocked." });
@@ -60,7 +57,6 @@ export default function ContactForm() {
       return;
     }
 
-    // Keyword filter
     const combined = (name + email + message).toLowerCase();
     if (SPAM_KEYWORDS.some((w) => combined.includes(w))) {
       setStatus({ type: "spam", text: "Spam-like content detected." });
@@ -68,7 +64,9 @@ export default function ContactForm() {
       return;
     }
 
-    // reCAPTCHA v3
+    // -------------------------
+    // reCAPTCHA v3 token
+    // -------------------------
     let recaptchaToken = "";
     try {
       recaptchaToken = await window.grecaptcha.execute(RECAPTCHA_SITE_KEY, {
@@ -80,23 +78,27 @@ export default function ContactForm() {
       return;
     }
 
-    // Prepare payload
+    // -------------------------
+    // Build simple POST (FormData) — no preflight → no CORS issues
+    // -------------------------
     const payload = {
       name,
       email,
       message,
       submittedAt: now,
-      recaptchaToken,
       honeypot,
+      recaptchaToken,
     };
 
-    // Send to Apps Script backend
+    const formData = new FormData();
+    formData.append("data", JSON.stringify(payload));
+
     try {
       const resp = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
-        body: JSON.stringify(payload),
-        headers: { "Content-Type": "application/json" },
+        body: formData, // NO headers → avoids OPTIONS preflight
       });
+
       const json = await resp.json();
 
       if (json.success) {
@@ -108,7 +110,7 @@ export default function ContactForm() {
           text: json.error || "Server rejected the submission.",
         });
       }
-    } catch (err) {
+    } catch (error) {
       setStatus({ type: "error", text: "Network error — try again." });
     }
 
@@ -138,7 +140,11 @@ export default function ContactForm() {
 
         <div>
           <label className="block text-sm font-medium mb-1">Name</label>
-          <input name="name" className="w-full border rounded-md p-2" required />
+          <input
+            name="name"
+            className="w-full border rounded-md p-2"
+            required
+          />
         </div>
 
         <div>
