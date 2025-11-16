@@ -22,21 +22,16 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 18
-          cache: "npm"
 
-      # 🚨 CLEAR VITE CACHE
       - name: Clear Vite cache
         run: rm -rf node_modules/.vite
 
-      # 🚨 CLEAR NPM CACHE
-      - name: Clear NPM cache
+      - name: Clear npm cache
         run: npm cache clean --force
 
-      # Fresh install
       - name: Install dependencies
         run: npm ci
 
-      # 🚨 VITE MUST BUILD FROM CLEAN STATE
       - name: Build Vite site
         run: npm run build -- --emptyOutDir
 
