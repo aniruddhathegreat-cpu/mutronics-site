@@ -5,7 +5,7 @@ import React, { useState, useEffect, useRef } from "react";
 // CONFIG — UPDATE THESE:
 // -------------------------------------------------------------
 const RECAPTCHA_SITE_KEY = "6LfQjgwsAAAAAEdurayKaqfWOnaXdVEyBMAqO3ay";
-const APPS_SCRIPT_URL ="https://script.google.com/macros/s/AKfycbwyd3Pq8fNJ53zXxINbEfbQTUXfJkrteNUFuSP9eTtGUfVSO-B5jHLDgoLsEHCV1KIt/exec";
+const APPS_SCRIPT_URL ="https://script.google.com/macros/s/AKfycbx7iN9XUCp_n0EssDRj2UpZrcx8UHSCliZM3_dR2UE9o_UNluO07rC5xetXiaK7d6umWA/exec";
 // -------------------------------------------------------------
 
 const SPAM_KEYWORDS = ["viagra", "casino", "loan", "bitcoin", "porn"];
