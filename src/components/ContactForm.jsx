@@ -1,11 +1,7 @@
 import React, { useState, useEffect, useRef } from "react";
 
-// -------------------------------------------------------------
-// CONFIG — UPDATE THESE:
-// -------------------------------------------------------------
 const RECAPTCHA_SITE_KEY = "6LfQjgwsAAAAAEdurayKaqfWOnaXdVEyBMAqO3ay";
 const APPS_SCRIPT_URL = "https://script.google.com/macros/s/AKfycbx7iN9XUCp_n0EssDRj2UpZrcx8UHSCliZM3_dR2UE9o_UNluO07rC5xetXiaK7d6umWA/exec";
-// -------------------------------------------------------------
 
 const MIN_SUBMIT_TIME_MS = 1200;
 
@@ -14,7 +10,7 @@ export default function ContactForm() {
   const [status, setStatus] = useState(null);
   const formStart = useRef(Date.now());
 
-  // Load reCAPTCHA
+  // Load reCAPTCHA v3
   useEffect(() => {
     const script = document.createElement("script");
     script.src = `https://www.google.com/recaptcha/api.js?render=${RECAPTCHA_SITE_KEY}`;
@@ -22,18 +18,16 @@ export default function ContactForm() {
     document.body.appendChild(script);
   }, []);
 
-  // Helper: submit form
-  async function handleSubmit(e) {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (sending) return;
 
     setSending(true);
     setStatus(null);
 
-    const now = Date.now();
-    if (now - formStart.current < MIN_SUBMIT_TIME_MS) {
-      setStatus({ type: "error", text: "Submission too fast — try again." });
+    // Minimum human-time
+    if (Date.now() - formStart.current < MIN_SUBMIT_TIME_MS) {
+      setStatus({ type: "error", text: "Submission too fast." });
       setSending(false);
       return;
     }
@@ -57,20 +51,20 @@ export default function ContactForm() {
       return;
     }
 
+    // reCAPTCHA v3 token
     let recaptchaToken = "";
-
     try {
       recaptchaToken = await window.grecaptcha.execute(
         RECAPTCHA_SITE_KEY,
         { action: "submit" }
       );
     } catch (err) {
-      console.error("reCAPTCHA error:", err);
-      setStatus({ type: "error", text: "reCAPTCHA failed. Try again." });
+      setStatus({ type: "error", text: "reCAPTCHA failed." });
       setSending(false);
       return;
     }
 
+    // **** CRITICAL PART: SEND JSON ONLY ****
     const payload = {
       data: JSON.stringify({
         name,
@@ -78,30 +72,27 @@ export default function ContactForm() {
         message,
         honeypot,
         recaptchaToken,
-        submittedAt: Date.now(),
-      }),
+        submittedAt: Date.now()
+      })
     };
 
     try {
       const resp = await fetch(APPS_SCRIPT_URL, {
         method: "POST",
         headers: {
-          "Content-Type": "application/json",
+          "Content-Type": "application/json"   // << NO FORM-DATA
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(payload)          // << JSON ONLY
       });
 
       const text = await resp.text();
-      console.log("Raw server response:", text);
+      console.log("Raw server output:", text);
 
       let json;
       try {
         json = JSON.parse(text);
-      } catch (e) {
-        setStatus({
-          type: "error",
-          text: "Server returned invalid response.",
-        });
+      } catch {
+        setStatus({ type: "error", text: "Invalid server response." });
         setSending(false);
         return;
       }
@@ -111,10 +102,7 @@ export default function ContactForm() {
         form.reset();
         formStart.current = Date.now();
       } else {
-        setStatus({
-          type: "error",
-          text: json.error || "Server rejected submission.",
-        });
+        setStatus({ type: "error", text: json.error });
       }
     } catch (err) {
       console.error("Network error:", err);
@@ -122,17 +110,15 @@ export default function ContactForm() {
     }
 
     setSending(false);
-  }
+  };
 
   return (
-    <form className="contact-form" onSubmit={handleSubmit}>
-      <input name="name" type="text" placeholder="Your Name" required />
+    <form onSubmit={handleSubmit}>
+      <input name="name" type="text" placeholder="Name" required />
+      <input name="email" type="email" placeholder="Email" required />
+      <textarea name="message" rows="5" placeholder="Message" required />
 
-      <input name="email" type="email" placeholder="Your Email" required />
-
-      <textarea name="message" rows="5" placeholder="Your Message" required />
-
-      {/* Invisible honeypot field */}
+      {/* Hidden honeypot field */}
       <input
         name="honeypot"
         type="text"
@@ -146,12 +132,7 @@ export default function ContactForm() {
       </button>
 
       {status && (
-        <p
-          style={{
-            marginTop: "10px",
-            color: status.type === "error" ? "red" : "green",
-          }}
-        >
+        <p style={{ color: status.type === "error" ? "red" : "green" }}>
           {status.text}
         </p>
       )}
